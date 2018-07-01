@@ -16,58 +16,60 @@ mysql  Ver 14.14 Distrib 5.7.22, for Linux (x86_64)
 # 2.Параметры установки ОС
 -минимальная установка + сервер ssh
 -ручная разметка раздела
-     
-	/boot 1Gb xfs отдельный раздел
-    
-	LVM-radius – все свободное место
-	    LG1  
-	      LV_root  /     5Gb  ex4 
-	      LV_swap  /swap 2Gb  ex4
-	      LV_var   /var  2Gb  ex4
-	      LV_home  /home 2Gb  ex4
-
+```
+/boot 1Gb xfs отдельный раздел
+LVM-radius – все свободное место
+    LG1  
+      LV_root  /     5Gb  ex4 
+      LV_swap  /swap 2Gb  ex4
+      LV_var   /var  2Gb  ex4
+      LV_home  /home 2Gb  ex4
+```
 # 3.Обновление пакетов системы после запуска:
-
+```
 sudo apt-get update
 sudo apt-get upgrade
-
+```
 
 # 4.Установка необходимого ПО:
-
+```
 sudo install mysql
 sudo apt-get install freeradius freeradius-mysql
 sudo apt-get update
-
+```
 # 5.Подготовка mysql
-
+```
 mysql -u root -p
 create database radius;
 grant all privileges  on radius.* to radius@localhost identified by "radius”;
 grant all privileges  on  * . * to 'radius'@'localhost';
 flush privileges;
 exit
-
+```
 # 5.1 Переходим в директорию с шаблонами и экспотрируем их в БД radius:
-
+```
 cd etc/freeradius/sql/mysql/
-
+```
+```
 mysql -u root -p radius yourdatabase < /etc/freeradius/sql/mysql/schema.sql
 mysql -u root -p radius yourdatabase < /etc/freeradius/sql/mysql/nas.sql
-
+```
 
 # 5.2 Добавляем доп-е атрибуты для пользователей
-
+```
  mysql -u root -p
- 
+ ```
+ ```
  use radius;
  INSERT INTO radcheck (UserName, Attribute, Value) VALUES ('ivan', 'User-Password', 'password');
  exit
-
-
+```
+```
 #INSERT INTO radcheck (username, attribute, op, value) VALUES ('thisuser', 'User-Password', ':=', 'thispassword');
-
+```
 
 # 6. Настройка конфигов freeradius.Открываем файл настроек Freeradius для MySQL /etc/freeradius/sql.conf и редактируем строки до такого вида:
+```
 sql { 
   database = "mysql" 
 	driver = "rlm_sql_${database}"
@@ -80,37 +82,40 @@ sql {
 	#uncomment readclients 
 	readclients = yes 
 }
-
+```
 
 # 6.1 Далее открываем файл сайта Freeradius  /etc/freeradius/sites-enabled/default и в следующих полях раскомментируем строки sql.Приводим следующие строки к виду:
-
+```
 Uncomment sql on authorize{}
 # See “Authorization Queries” in sql.conf
 sql
-...
+```
+```
 Uncomment sql on accounting{}
 # See “Accounting queries” in sql.conf
 sql
-...
+```
+```
 Uncomment sql on session{}
 # See “Simultaneous Use Checking Queries” in sql.conf
 sql
-...
+```
+```
 Uncomment sql on post-auth{}
 # See “Authentication Logging Queries” in sql.conf
 sql
-…
+```
 
 # 6.2 В файле /etc/freeradius/clients.conf в секции “client localhost“ нужно сделать следующее:
-
+```
 ipaddr = 127.0.0.1 
 secret = secret 
 nastype = other
-
+```
 # 6.3 Далее правим основной конфигурационный файл Freeradius и включаем поддержку Mysql  /etc/freeradius/radiusd.conf раскомментировав строку:
-
+```
 $INCLUDE sql.conf
-
+```
 # 7.Тестирование работы сервера. Откроем 2 ssh окна терминала, в первом остановим сервис Freeradius:
 
 freeradius stop

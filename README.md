@@ -1,5 +1,5 @@
 # freeradius
-ubuntu 16.04 + fereeradius +mysql
+ubuntu 16.04 + fereeradius + mysql
 
 # REQUIREMENTS:
 Дистрибутив ubuntu server 16.04.4 TLS
@@ -127,21 +127,35 @@ radtest ivan passwors localhost 1812 secret
 
 # 8.Тестирование функции accaunting (предварительно требуется повторение пункта 7)
 
-# 8.1 Создаем и отправляем тестовый пакет для отправки на сервер, в нем размещается набор AV пар
-  
-radclient 127.0.0.1 auto secret -f acct_start.txt -x
+# 8.1 Создаем три служебных пакета для тестирования контроля сессий пользователей start.txt, interim-update.txt, stop.txt. Отправляем последовательно тестовые пакеты на сервер, контролирую изменения параметров записей в БД radius. (В пакетах размещается набор AV пар).
 
-# 8.2 Проверяем, что в базе mysql появились данные запроса в таблице radacct.
+Запрос начала сессии:
+radclient 127.0.0.1 auto secret -f start.txt -x 
+
+Проверка записи данных в БД:
 
 mysql -u radius -p radius
 use radius
-select * radacct;
+select username,radacctid,acctstoptime,acctstoptime from radacct;
 
-# 8.3 Создаем еще три служебных пакета для для тестирования контроля сессий пользователей start.txt, interim-update.txt, stop.txt.
+Запрос обновления данных:
+radclient 127.0.0.1 auto secret -f interim-update.txt -x
 
-radclient 127.0.0.1 auto secret -f start.txt -x 
-radclient 127.0.0.1 auto secret -f interim-update.txt -x 
+Проверка записи данных в БД:
+
+mysql -u radius -p radius
+use radius
+select username,radacctid,acctstoptime,acctstoptime from radacct;
+
+Запрос закрытия сессии:
 radclient 127.0.0.1 auto secret -f stop.txt -x 
+
+Проверка изменения данных в БД:
+
+mysql -u radius -p radius
+use radius
+select username,radacctid,acctstoptime,acctstoptime from radacct;
+
 
 # 9. Для использования счетчиков(нет в задании): 
 

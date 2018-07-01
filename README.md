@@ -8,12 +8,12 @@ mysql  Ver 14.14 Distrib 5.7.22, for Linux (x86_64)
 
 # INSTALATION
 
-1.Установка VirtualBox v5.2
+# 1.Установка VirtualBox v5.2
 -2Gb оперативки
 -25Gb физически выделенного места и создание VHD
 -тип сетевого подключения bridge
 
-2.Параметры установки ОС
+# 2.Параметры установки ОС
 -минимальная установка + сервер ssh
 -ручная разметка раздела
      
@@ -26,19 +26,19 @@ mysql  Ver 14.14 Distrib 5.7.22, for Linux (x86_64)
 	      LV_var   /var  2Gb  ex4
 	      LV_home  /home 2Gb  ex4
 
-3.Обновление пакетов системы после запуска:
+# 3.Обновление пакетов системы после запуска:
 
 sudo apt-get update
 sudo apt-get upgrade
 
 
-4.Установка необходимого ПО:
+# 4.Установка необходимого ПО:
 
 sudo install mysql
 sudo apt-get install freeradius freeradius-mysql
 sudo apt-get update
 
-5.Подготовка mysql
+# 5.Подготовка mysql
 
 mysql -u root -p
 create database radius;
@@ -47,7 +47,7 @@ grant all privileges  on  * . * to 'radius'@'localhost';
 flush privileges;
 exit
 
-5.1 Переходим в директорию с шаблонами и экспотрируем их в БД radius:
+# 5.1 Переходим в директорию с шаблонами и экспотрируем их в БД radius:
 
 cd etc/freeradius/sql/mysql/
 
@@ -55,7 +55,7 @@ mysql -u root -p radius yourdatabase < /etc/freeradius/sql/mysql/schema.sql
 mysql -u root -p radius yourdatabase < /etc/freeradius/sql/mysql/nas.sql
 
 
-5.2 Добавляем доп-е атрибуты для пользователей
+# 5.2 Добавляем доп-е атрибуты для пользователей
 
  mysql -u root -p
  
@@ -67,7 +67,7 @@ mysql -u root -p radius yourdatabase < /etc/freeradius/sql/mysql/nas.sql
 #INSERT INTO radcheck (username, attribute, op, value) VALUES ('thisuser', 'User-Password', ':=', 'thispassword');
 
 
-6. Настройка конфигов freeradius.Открываем файл настроек Freeradius для MySQL /etc/freeradius/sql.conf и редактируем строки до такого вида:
+# 6. Настройка конфигов freeradius.Открываем файл настроек Freeradius для MySQL /etc/freeradius/sql.conf и редактируем строки до такого вида:
 sql { 
   database = "mysql" 
 	driver = "rlm_sql_${database}"
@@ -82,7 +82,7 @@ sql {
 }
 
 
-6.1 Далее открываем файл сайта Freeradius  /etc/freeradius/sites-enabled/default и в следующих полях раскомментируем строки sql.Приводим следующие строки к виду:
+# 6.1 Далее открываем файл сайта Freeradius  /etc/freeradius/sites-enabled/default и в следующих полях раскомментируем строки sql.Приводим следующие строки к виду:
 
 Uncomment sql on authorize{}
 # See “Authorization Queries” in sql.conf
@@ -101,17 +101,17 @@ Uncomment sql on post-auth{}
 sql
 …
 
-6.2 В файле /etc/freeradius/clients.conf в секции “client localhost“ нужно сделать следующее:
+# 6.2 В файле /etc/freeradius/clients.conf в секции “client localhost“ нужно сделать следующее:
 
 ipaddr = 127.0.0.1 
 secret = secret 
 nastype = other
 
-6.3 Далее правим основной конфигурационный файл Freeradius и включаем поддержку Mysql  /etc/freeradius/radiusd.conf раскомментировав строку:
+# 6.3 Далее правим основной конфигурационный файл Freeradius и включаем поддержку Mysql  /etc/freeradius/radiusd.conf раскомментировав строку:
 
 $INCLUDE sql.conf
 
-7.Тестирование работы сервера. Откроем 2 ssh окна терминала, в первом остановим сервис Freeradius:
+# 7.Тестирование работы сервера. Откроем 2 ssh окна терминала, в первом остановим сервис Freeradius:
 
 freeradius stop
 sudo service freeradius stop
@@ -119,21 +119,25 @@ sudo service freeradius stop
 Затем запускаем freeradius  в режиме отладки:
 sudo freeradius -X - debug mode
 
-7.2 Во втором окне терминала отправляем тестовый запрос:
+# 7.1 Во втором окне терминала отправляем тестовый запрос:
 
 radtest ivan passwors localhost 1812 secret
 
 ##Для вывода дополнительных параметров пользователя нужно добавить AV пары в таблицу radcheck и повторим тестовый запрос
 
-8.Тестирование функции accaunting 
+# 8.Тестирование функции accaunting (предварительно требуется повторение пункта 7)
 
-8.1 Создаем и отправляем тестовый пакет для отправки на сервер, в нем размещается набор AV пар
+# 8.1 Создаем и отправляем тестовый пакет для отправки на сервер, в нем размещается набор AV пар
   
-radclient 127.0.0.1 auto secret -f acct_start_01.txt -x
+radclient 127.0.0.1 auto secret -f acct_start.txt -x
 
-8.2 Проверяем, что в базе mysql    появились данные запроса в таблице radacct.
+# 8.2 Проверяем, что в базе mysql появились данные запроса в таблице radacct.
 
-8.3 Создаем еще три служебных пакета для для тестирования контроля сессий пользователей start.txt, interim-update.txt, stop.txt.
+mysql -u radius -p radius
+use radius
+select * radacct;
+
+# 8.3 Создаем еще три служебных пакета для для тестирования контроля сессий пользователей start.txt, interim-update.txt, stop.txt.
 
 radclient 127.0.0.1 auto secret -f start.txt -x 
 radclient 127.0.0.1 auto secret -f interim-update.txt -x 

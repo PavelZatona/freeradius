@@ -1,0 +1,8 @@
+
+Packet-Type=4
+Packet-Dst-Port=1813
+Acct-Session-Id = "1234"
+Acct-Status-Type = Start
+Acct-Authentic = RADIUS
+User-Name = "user01"
+NAS-Port = 0
